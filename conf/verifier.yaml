@@ -1,0 +1,8 @@
+rest:
+  address: 0.0.0.0
+  port: 8081
+verifier:
+  attestation_interval: 30
+  init:
+    owner_password: tpmOwnerPassword
+    user_password: tpmUserPassword

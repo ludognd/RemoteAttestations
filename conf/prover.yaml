@@ -1,0 +1,10 @@
+rest:
+  address: 0.0.0.0
+  port: 8080
+prover:
+  name: test
+  attestation_key: ak.json
+  owner_password: tpmOwnerPassword
+  user_password: tpmUserPassword
+  verifier_address: 10.42.0.1
+  verifier_port: 8081
