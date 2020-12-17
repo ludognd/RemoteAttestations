@@ -117,7 +117,8 @@ func (v *DataVerifier) StartAttestations() {
 		//_, err = v.AttestationRequest(nonce, url)
 		attestation, err := v.AttestationRequest(nonce, url)
 		if err != nil {
-			log.Fatalf("error attesting %v(%v) on URL %v:  %v", p.Name, p.Endpoint, url, err)
+			log.Errorf("error attesting %v(%v) on URL %v:  %v", p.Name, p.Endpoint, url, err)
+			continue
 		}
 		err = attestation.Verify(p.AK, nonce)
 		if err != nil {
