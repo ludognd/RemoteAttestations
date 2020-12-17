@@ -1,7 +1,10 @@
 package RestServer
 
 import (
+	"context"
 	"encoding/json"
+	"time"
+
 	//"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -22,21 +25,37 @@ func handleRequests(router *mux.Router) {
 	router.HandleFunc("/attest", attest).Methods("POST")
 }
 
-func RunServer(config *Config, prover *prover.Prover) error {
+func RunServer(config *Config, prover *prover.Prover) *http.Server {
 	p = prover
 	router := mux.NewRouter().StrictSlash(true)
 	handleRequests(router)
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	srv := &http.Server{
+		Addr:         config.Address + ":" + config.Port,
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      router, // Pass our instance of gorilla/mux in.
+	}
+	_ = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
 		met, _ := route.GetMethods()
 		fmt.Println(tpl, met)
 		return nil
 	})
-	if err != nil {
-		log.Error(err)
-	}
 	fmt.Printf("Starting up on %s:%s\n", config.Address, config.Port)
-	return http.ListenAndServe(config.Address+":"+config.Port, router)
+	go func() {
+		defer log.Info("server goroutine terminated")
+		if err := srv.ListenAndServe(); err != nil {
+			log.Info(err)
+		}
+	}()
+	return srv
+}
+
+func StopServer(server *http.Server) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+	return server.Shutdown(ctx)
 }
 
 func test(w http.ResponseWriter, r *http.Request) {

@@ -2,11 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	p "github.com/xcaliburne/RemoteAttestations/pkg/prover"
 	"github.com/xcaliburne/RemoteAttestations/pkg/prover/RestServer"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type Config struct {
@@ -14,7 +18,7 @@ type Config struct {
 	Prover *p.Config          `yaml:"prover"`
 }
 
-var configFile = flag.String("config", "conf/prover.yaml", "Path to the config file")
+var configFile = flag.String("config", "configs/prover.yaml", "Path to the config file")
 
 func parseConfig(configPath string) (*Config, error) {
 	var conf Config
@@ -43,5 +47,18 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
-	log.Error(RestServer.RunServer(conf.Rest, prover))
+	server := RestServer.RunServer(conf.Rest, prover)
+
+	//Signal that listens on OS signals
+	signalChan := make(chan os.Signal, 1)
+	//Listens to SIGINT only (ctrl+c)
+	var t os.Signal
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGTERM, os.Kill)
+
+	t = <-signalChan
+	fmt.Println("received ", t.String())
+	err = RestServer.StopServer(server)
+	if err != nil {
+		log.Error(err)
+	}
 }

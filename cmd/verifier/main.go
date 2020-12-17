@@ -20,7 +20,7 @@ type Config struct {
 }
 
 var (
-	configFile = flag.String("configFile", "conf/verifier.yaml", "Path to the configFile file")
+	configFile = flag.String("configFile", "configs/verifier.yaml", "Path to the configFile file")
 	port       = flag.String("port", "8081", "Listening port")
 	address    = flag.String("address", "127.0.0.1", "Listening port")
 )
