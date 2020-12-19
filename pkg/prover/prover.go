@@ -9,15 +9,6 @@ import (
 	"net/http"
 )
 
-type Config struct {
-	Name            string `yaml:"name"`
-	AKFile          string `yaml:"attestation_key"`
-	OwnerPassword   string `yaml:"owner_password"`
-	UserPassword    string `yaml:"user_password"`
-	VerifierAddress string `yaml:"verifier_address"`
-	VerifierPort    string `yaml:"verifier_port"`
-}
-
 type Prover struct {
 	Config *Config
 	TPM    tpm.TPM
@@ -107,7 +98,8 @@ func (p *Prover) Register(restIP, restPort string) error {
 
 func (p *Prover) registerEK(restIP, restPort string) error {
 	restIP = "10.42.0.152" //TODO: fix hardcoded
-	url := fmt.Sprintf("http://%s:%s/registerNewEK", p.Config.VerifierAddress, p.Config.VerifierPort)
+	queryURL := p.Config.VerifierAddress
+	queryURL.Path = "registerNewEK"
 	body := struct {
 		Name     string
 		Endpoint string
@@ -123,19 +115,20 @@ func (p *Prover) registerEK(restIP, restPort string) error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
 	defer r.Body.Close()
 	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("an error occured during query: %v", err)
+		return fmt.Errorf("an error occured during query: %v", r.Status)
 	}
 	return nil
 }
 
 func (p *Prover) registerAK() error {
-	url := fmt.Sprintf("http://%s:%s/registerNewAK", p.Config.VerifierAddress, p.Config.VerifierPort)
+	queryURL := p.Config.VerifierAddress
+	queryURL.Path = "registerNewAK"
 	body := struct {
 		EK tpm.EndorsementKey
 		AK tpm.AttestationKey
@@ -144,13 +137,13 @@ func (p *Prover) registerAK() error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
 	defer r.Body.Close()
 	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("an error occured during query: %v", err)
+		return fmt.Errorf("an error occured during query: %v", r.Status)
 	}
 	return nil
 }

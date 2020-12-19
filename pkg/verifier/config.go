@@ -1,5 +1,7 @@
 package verifier
 
+import "time"
+
 type InitializationParams struct {
 	OwnerPassword string `yaml:"owner_password"`
 	UserPassword  string `yaml:"user_password"`
@@ -7,5 +9,5 @@ type InitializationParams struct {
 
 type Config struct {
 	Init                InitializationParams `yaml:"init"`
-	AttestationInterval int                  `yaml:"attestation_interval"`
+	AttestationInterval time.Duration        `yaml:"attestation_interval"`
 }
