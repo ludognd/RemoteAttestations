@@ -1,8 +1,8 @@
 rest:
-#  address: 0.0.0.0
+  address: 0.0.0.0
   port: 8081
 verifier:
   attestation_interval: 15s
   init:
-    owner_password: coucou
-#    user_password: tpmUserPassword
+    owner_password: tpmOwnerPassword
+    user_password: tpmUserPassword
