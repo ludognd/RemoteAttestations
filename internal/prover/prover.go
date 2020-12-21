@@ -153,6 +153,6 @@ func (p *Prover) Attest(nonce []byte) (tpm.Quote, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error while quoting: %v", err)
 	}
-	fmt.Printf("quote: %+v\n", quote)
+	//fmt.Printf("quote: %+v\n", quote)
 	return quote, nil
 }
