@@ -1,8 +1,8 @@
 package fakes
 
 import (
+	"github.com/xcaliburne/RemoteAttestations/internal/verifier"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tpm"
-	"github.com/xcaliburne/RemoteAttestations/pkg/verifier"
 )
 
 func GetFakeProver(getEK func() tpm.EndorsementKey, getAK func() tpm.AttestationKey) verifier.Prover {

@@ -3,10 +3,10 @@ package prover
 import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/xcaliburne/RemoteAttestations/internal/verifier/tests/fakes"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tests"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tpm"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tpm/tests/mocks"
-	"github.com/xcaliburne/RemoteAttestations/pkg/verifier/tests/fakes"
 	"testing"
 )
 
