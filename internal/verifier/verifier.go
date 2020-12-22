@@ -17,7 +17,6 @@ type Verifier interface {
 	RegisterNewEK(p *Prover) error
 	RegisterNewAK(p *Prover) error
 	AttestationRequest(nonce []byte, url string) (tpm.Quote, error)
-	HasProvers() bool
 	StartAttestations()
 	GetChallenge() ([]byte, error)
 }
@@ -100,10 +99,6 @@ func (v *DataVerifier) RegisterNewAK(p *Prover) error {
 		return fmt.Errorf("error storing new EK: %v", err)
 	}
 	return nil
-}
-
-func (v *DataVerifier) HasProvers() bool {
-	return len(v.ProversAK) != 0
 }
 
 func (v *DataVerifier) StartAttestations() {
