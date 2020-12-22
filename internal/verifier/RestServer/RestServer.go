@@ -97,18 +97,25 @@ func (s *RestServer) registerNewEK(w http.ResponseWriter, r *http.Request) {
 		Name     string
 		Endpoint string
 		Port     string
-		EK       tpm.EndorsementKeyData
+		EK       *tpm.EndorsementKeyData
 	}{}
 	err := decoder.Decode(&queryBody)
 	if err != nil {
-		log.Error("error decoding EK: ", err)
-		http.Error(w, "error decoding EK", 500)
+		log.Error("error decoding json: ", err)
+		http.Error(w, "error decoding json", http.StatusBadRequest)
+		return
 	}
-	p := verifier.Prover{EK: &queryBody.EK, Name: queryBody.Name, Endpoint: queryBody.Endpoint, Port: queryBody.Port}
+	if queryBody.Name == "" || queryBody.Endpoint == "" || queryBody.Port == "" || queryBody.EK == nil {
+		log.Errorf("%v %v", http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	p := verifier.Prover{EK: queryBody.EK, Name: queryBody.Name, Endpoint: queryBody.Endpoint, Port: queryBody.Port}
 	err = s.v.RegisterNewEK(&p)
 	if err != nil {
 		log.Error("error registering EK: ", err)
 		http.Error(w, "error registering EK", 500)
+		return
 	}
 	_, err = w.Write([]byte("success"))
 	if err != nil {
@@ -125,14 +132,22 @@ func (s *RestServer) registerNewAK(w http.ResponseWriter, r *http.Request) {
 	}{}
 	err := decoder.Decode(&queryBody)
 	if err != nil {
-		log.Error("error decoding AK: ", err)
-		http.Error(w, "error decoding AK", 500)
+		log.Error("error decoding query: ", err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	fmt.Printf("%+v\n", queryBody)
+	if queryBody.EK == nil || queryBody.AK == nil {
+		log.Errorf("%v %v", http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 	p := verifier.Prover{EK: queryBody.EK, AK: queryBody.AK}
 	err = s.v.RegisterNewAK(&p)
 	if err != nil {
 		log.Error("error registering AK: ", err)
 		http.Error(w, "error registering AK", 500)
+		return
 	}
 	_, err = w.Write([]byte("success\n"))
 	if err != nil {
