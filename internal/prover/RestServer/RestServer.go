@@ -20,7 +20,7 @@ type Config struct {
 type RestServer struct {
 	config *Config
 	server *http.Server
-	p      *prover.Prover
+	p      prover.Prover
 }
 
 func (rest *RestServer) handleRequests(router *mux.Router) {
@@ -28,7 +28,7 @@ func (rest *RestServer) handleRequests(router *mux.Router) {
 	router.HandleFunc("/attest", rest.attest).Methods("POST")
 }
 
-func NewServer(config *Config, prover *prover.Prover) (*RestServer, error) {
+func NewServer(config *Config, prover prover.Prover) (*RestServer, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(config.Address.String(), config.Port))
 	if err != nil {
 		return nil, err
@@ -82,7 +82,12 @@ func (rest *RestServer) attest(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&queryBody)
 	if err != nil {
 		log.Error("error decoding nonce: ", err)
-		http.Error(w, "error decoding nonce", http.StatusInternalServerError)
+		http.Error(w, "error decoding nonce", http.StatusBadRequest)
+		return
+	}
+	if len(queryBody.Nonce) == 0 {
+		log.Error("empty nonce")
+		http.Error(w, "empty nonce", http.StatusBadRequest)
 		return
 	}
 	attestation, err := rest.p.Attest(queryBody.Nonce[:])
