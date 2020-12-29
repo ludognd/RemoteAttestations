@@ -1,10 +1,10 @@
 package prover
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/xcaliburne/RemoteAttestations/pkg/httpClient"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tpm"
 	"net/http"
 )
@@ -96,6 +96,9 @@ func (p *DataProver) load() error {
 }
 
 func (p *DataProver) Register(restIP, restPort string) error {
+	if p.Config == nil || p.AK == nil || p.EK == nil{
+		return fmt.Errorf("missing required fields")
+	}
 	err := p.registerEK(restIP, restPort)
 	if err != nil {
 		return err
@@ -122,7 +125,7 @@ func (p *DataProver) registerEK(restIP, restPort string) error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
+	r, err := httpClient.Client.Post(queryURL.String(), "application/json", jsonBody)
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
@@ -144,7 +147,7 @@ func (p *DataProver) registerAK() error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
+	r, err := httpClient.Client.Post(queryURL.String(), "application/json", jsonBody)
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
@@ -160,6 +163,5 @@ func (p *DataProver) Attest(nonce []byte) (tpm.Quote, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error while quoting: %v", err)
 	}
-	//fmt.Printf("quote: %+v\n", quote)
 	return quote, nil
 }
