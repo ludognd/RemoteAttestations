@@ -7,7 +7,7 @@ import (
 
 type MockAttesationKey struct {
 	CatchSave      func(filePath string) error
-	catchPublicKey func() *rsa.PublicKey
+	CatchPublicKey func() *rsa.PublicKey
 	CatchBlob      func() []byte
 }
 
@@ -18,7 +18,7 @@ func (ak *MockAttesationKey) Save(filePath string) error {
 }
 
 func (ak *MockAttesationKey) PublicKey() *rsa.PublicKey {
-	return ak.catchPublicKey()
+	return ak.CatchPublicKey()
 }
 
 func (ak *MockAttesationKey) Blob() []byte {
