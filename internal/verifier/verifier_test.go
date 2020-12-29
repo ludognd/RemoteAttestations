@@ -266,7 +266,7 @@ func TestDataVerifier_RegisterNewAK(t *testing.T) {
 				return pkValid
 			},
 		},
-		AK: &tpmMocks.MockAttesationKey{
+		AK: &tpmMocks.MockAttestationKey{
 			CatchPublicKey: func() *rsa.PublicKey {
 				return pkValid
 			},
@@ -312,7 +312,7 @@ func TestDataVerifier_RegisterNewAK(t *testing.T) {
 				Endpoint: "0.0.0.0",
 				Port:     "80",
 				EK:       nil,
-				AK: &tpmMocks.MockAttesationKey{
+				AK: &tpmMocks.MockAttestationKey{
 					CatchPublicKey: func() *rsa.PublicKey {
 						return pkValid
 					},
