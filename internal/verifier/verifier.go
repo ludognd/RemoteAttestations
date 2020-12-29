@@ -37,7 +37,7 @@ func (v *DataVerifier) InitParams() InitializationParams {
 	return v.Config.Init
 }
 
-func (v *DataVerifier) GetProverEK(k *rsa.PublicKey) (*Prover, error) {
+func (v *DataVerifier) getProverEK(k *rsa.PublicKey) (*Prover, error) {
 	key := fmt.Sprintf("%v:%v", k.N.String(), k.E)
 	if p, ok := v.ProversEK[key]; ok {
 		return p, nil
@@ -45,7 +45,7 @@ func (v *DataVerifier) GetProverEK(k *rsa.PublicKey) (*Prover, error) {
 	return nil, fmt.Errorf("prover not found")
 }
 
-func (v *DataVerifier) PutProverEK(p *Prover) error {
+func (v *DataVerifier) putProverEK(p *Prover) error {
 	if p.EK == nil {
 		return fmt.Errorf("endorsement key not set\n")
 	}
@@ -57,7 +57,7 @@ func (v *DataVerifier) PutProverEK(p *Prover) error {
 	return nil
 }
 
-func (v *DataVerifier) GetProverAK(k *rsa.PublicKey) (*Prover, error) {
+func (v *DataVerifier) getProverAK(k *rsa.PublicKey) (*Prover, error) {
 	key := fmt.Sprintf("%v:%v", k.N.String(), k.E)
 	if p, ok := v.ProversAK[key]; ok {
 		return p, nil
@@ -65,7 +65,7 @@ func (v *DataVerifier) GetProverAK(k *rsa.PublicKey) (*Prover, error) {
 	return nil, fmt.Errorf("prover not found")
 }
 
-func (v *DataVerifier) PutProverAK(p *Prover) error {
+func (v *DataVerifier) putProverAK(p *Prover) error {
 	if p.AK == nil {
 		return fmt.Errorf("attestation key not set\n")
 	}
@@ -78,10 +78,13 @@ func (v *DataVerifier) PutProverAK(p *Prover) error {
 }
 
 func (v *DataVerifier) RegisterNewEK(p *Prover) error {
+	if p.EK == nil {
+		return fmt.Errorf("endorsement key not set\n")
+	}
 	if err := p.EK.VerifyEKCert(); err != nil {
 		return fmt.Errorf("error verifying EK Certificate: %v", err)
 	}
-	err := v.PutProverEK(p)
+	err := v.putProverEK(p)
 	if err != nil {
 		return fmt.Errorf("error storing new EK: %v", err)
 	}
@@ -89,12 +92,15 @@ func (v *DataVerifier) RegisterNewEK(p *Prover) error {
 }
 
 func (v *DataVerifier) RegisterNewAK(p *Prover) error {
-	newP, err := v.GetProverEK(p.EK.PublicKey())
+	if p.EK == nil {
+		return fmt.Errorf("endorsement key not set\n")
+	}
+	newP, err := v.getProverEK(p.EK.PublicKey())
 	if err != nil {
 		return fmt.Errorf("error retrieving prover: %v", err)
 	}
 	newP.AK = p.AK
-	err = v.PutProverAK(newP)
+	err = v.putProverAK(newP)
 	if err != nil {
 		return fmt.Errorf("error storing new EK: %v", err)
 	}
@@ -125,6 +131,9 @@ func (v *DataVerifier) StartAttestations() {
 }
 
 func (v *DataVerifier) AttestationRequest(nonce []byte, url string) (tpm.Quote, error) {
+	if len(nonce) == 0 {
+		return nil,fmt.Errorf("empty nonce")
+	}
 	body := struct{ Nonce []byte }{Nonce: nonce}
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
