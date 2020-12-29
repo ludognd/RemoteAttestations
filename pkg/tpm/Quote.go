@@ -1,6 +1,7 @@
 package tpm
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -70,5 +71,26 @@ func (q *QuoteData) VerifyPCRs(pcrs []PCR) error {
 	if q.Parsed.Digest != sha1.Sum(composite) {
 		return fmt.Errorf("PCRs don't match ParsedQuote: %v", err)
 	}
+	return nil
+}
+
+func (q *QuoteData) UnmarshalJSON(data []byte) error {
+	aux := &struct {
+		Raw       []byte
+		Parsed    ParsedQuote
+		Signature []byte
+	}{}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	if len(aux.Raw) == 0 ||
+		len(aux.Signature) == 0 ||
+		bytes.Equal(aux.Parsed.Nonce[:], make([]byte, cap(aux.Parsed.Nonce))) ||
+		bytes.Equal(aux.Parsed.Digest[:], make([]byte, cap(aux.Parsed.Digest))) ||
+		bytes.Equal(aux.Parsed.Fixed[:], make([]byte, cap(aux.Parsed.Fixed))) ||
+		bytes.Equal(aux.Parsed.Version[:], make([]byte, cap(aux.Parsed.Version))) {
+		return fmt.Errorf("missing required fields")
+	}
+	q.Raw, q.Parsed, q.Signature = aux.Raw, aux.Parsed, aux.Signature
 	return nil
 }
