@@ -136,7 +136,6 @@ func (s *RestServer) registerNewAK(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("%+v\n", queryBody)
 	if queryBody.EK == nil || queryBody.AK == nil {
 		log.Errorf("%v %v", http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
