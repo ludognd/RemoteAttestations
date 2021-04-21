@@ -107,8 +107,12 @@ func (s *RestServer) registerNewEK(w http.ResponseWriter, r *http.Request) {
 	p := verifier.Prover{EK: &queryBody.EK, Name: queryBody.Name, Endpoint: queryBody.Endpoint, Port: queryBody.Port}
 	err = s.v.RegisterNewEK(&p)
 	if err != nil {
-		log.Error("error registering EK: ", err)
-		http.Error(w, "error registering EK", 500)
+		if err.Error() != "error storing new EK: endorsement key already set\n"{
+			log.Error("error registering EK: ", err)
+			http.Error(w, "error registering EK", 500)
+		}else {
+			err = nil
+		}
 	}
 	_, err = w.Write([]byte("success"))
 	if err != nil {
@@ -131,8 +135,12 @@ func (s *RestServer) registerNewAK(w http.ResponseWriter, r *http.Request) {
 	p := verifier.Prover{EK: queryBody.EK, AK: queryBody.AK}
 	err = s.v.RegisterNewAK(&p)
 	if err != nil {
-		log.Error("error registering AK: ", err)
-		http.Error(w, "error registering AK", 500)
+		if err.Error() != "error storing new AK: attestation key already set\n"{
+			log.Error("error registering AK: ", err)
+			http.Error(w, "error registering AK", 500)
+		}else {
+			err = nil
+		}
 	}
 	_, err = w.Write([]byte("success\n"))
 	if err != nil {
