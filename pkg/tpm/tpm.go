@@ -24,7 +24,7 @@ type TPM interface {
 	CreateAK() (AttestationKey, error)
 	Quote(ak AttestationKey, nonce []byte, pcrIds []int) (Quote, error)
 	ListPCRs() []PCR
-	ExtendPCR(pcr PCR, data []byte) error
+	ExtendPCR(pcrId int, data []byte, eventId int, event string) error
 }
 
 type tspiTPM struct {
@@ -319,8 +319,11 @@ func (tpm *tspiTPM) ListPCRs() []PCR {
 	return pcrs
 }
 
-func (tpm *tspiTPM) ExtendPCR(pcr PCR, data []byte) error {
-	//tpm.tpmHandle.ExtendPCR(pcr.Id, )
-	//TODO: Implement
+func (tpm *tspiTPM) ExtendPCR(pcrId int, data []byte, eventId int, event string) error {
+	eventBytes := []byte(event)
+	if event == "" {
+		eventBytes = nil
+	}
+	tpm.tpmHandle.ExtendPCR(pcrId, data, eventId, eventBytes)
 	return nil
 }
