@@ -6,4 +6,4 @@ prover:
   attestation_key: ak.json
   owner_password: tpmOwnerPassword
   user_password: tpmUserPassword
-  verifier_url: 10.42.0.1:8081
+  verifier_url: 10.42.0.1:8080
