@@ -273,6 +273,7 @@ func (tpm *tspiTPM) CreateAK() (AttestationKey, error) {
 }
 
 func (tpm *tspiTPM) Quote(ak AttestationKey, nonce []byte, pcrIds []int) (Quote, error) {
+	//start := time.Now()
 	q := QuoteData{}
 	userToken, err := tpm.getUserToken()
 	if err != nil {
@@ -301,6 +302,8 @@ func (tpm *tspiTPM) Quote(ak AttestationKey, nonce []byte, pcrIds []int) (Quote,
 		return nil, fmt.Errorf("failed to parse ParsedQuote: %v", err)
 	}
 	q.Parsed = parsed
+	//duration := time.Now().Sub(start)
+	//fmt.Printf("Quote time: %v\n", duration)
 	return &q, nil
 }
 

@@ -68,7 +68,7 @@ func (q *QuoteData) VerifyPCRs(pcrs []PCR) error {
 		return fmt.Errorf("creating composite: %v", err)
 	}
 	if q.Parsed.Digest != sha1.Sum(composite) {
-		return fmt.Errorf("PCRs don't match ParsedQuote: %v", err)
+		return fmt.Errorf("PCRs don't match ParsedQuote")
 	}
 	return nil
 }

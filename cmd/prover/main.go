@@ -37,7 +37,7 @@ func parseConfig(configPath string) (*Config, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%+v\n", conf)
+	//fmt.Printf("%+v\n", conf)
 	conf.Rest.Address = *address
 	conf.Rest.Port = *port
 	conf.Prover.Name = *name
@@ -90,7 +90,7 @@ func parseConfig(configPath string) (*Config, error) {
 		}
 		conf.Prover.VerifierAddress = addr
 	}
-	fmt.Printf("%+v\n", conf)
+	//fmt.Printf("%+v\n", conf)
 	return &conf, nil
 }
 
