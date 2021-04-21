@@ -1,0 +1,21 @@
+FROM golang:1.15.5 AS build
+RUN apt-get update -y && apt-get install -y libtspi-dev
+WORKDIR /go/src/RemoteAttestations
+COPY . .
+RUN mkdir output && \
+    mkdir output/bin && \
+    mkdir output/configs && \
+    go build -o output/bin/prover github.com/xcaliburne/RemoteAttestations/cmd/prover && \
+    cp configs/prover.yaml output/configs
+
+FROM ubuntu:latest
+
+WORKDIR /opt/RemoteAttestation
+COPY --from=build /go/src/RemoteAttestations/output .
+RUN apt-get update -y && \
+    apt-get install -y trousers libtspi-dev && \
+    echo  '#!/bin/bash\ntcsd\n./bin/prover "$@"' > entrypoint.sh && \
+#    echo  '#!/bin/bash\necho "$@"' > entrypoint.sh && \
+    chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
+CMD []
