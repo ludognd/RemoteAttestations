@@ -13,7 +13,7 @@ type PCR struct {
 	Value []byte
 }
 
-// Creates a PCR composite as stated in tspiTPM-Main-Part-2-tspiTPM-Structures_v1.2_rev116_01032011.pdf section 5.4.1
+// Creates a PCR composite as stated in tspi TPM-Main-Part-2-tspiTPM-Structures_v1.2_rev116_01032011.pdf section 5.4.1
 func pcrsToComposite(pcrs []PCR) ([]byte, error) {
 	sort.Slice(pcrs, func(i, j int) bool { return pcrs[i].Id < pcrs[j].Id })
 	var bitmap [3]byte   //24 PCRs bitmap
@@ -22,11 +22,15 @@ func pcrsToComposite(pcrs []PCR) ([]byte, error) {
 		if pcr.Id < 0 || pcr.Id >= 24 {
 			return nil, fmt.Errorf("invalid PCR index: %d", pcr.Id)
 		}
-		bitmapId := pcr.Id / cap(bitmap)
+		bitmapId := pcr.Id / 8
 		shift := pcr.Id % 8
 		bitmap[bitmapId] |= 1 << shift
 		valBuffer = append(valBuffer, pcr.Value...)
 	}
-
-	return tpmutil.Pack(3, bitmap, valBuffer)
+	var PCRComposite = struct {
+		Size    uint16 // always 3
+		PCRMask [3]byte
+		Values  tpmutil.U32Bytes
+	}{3, bitmap, valBuffer}
+	return tpmutil.Pack(PCRComposite)
 }
