@@ -97,7 +97,7 @@ func (v *DataVerifier) RegisterNewAK(p *Prover) error {
 	newP.AK = p.AK
 	err = v.PutProverAK(newP)
 	if err != nil {
-		return fmt.Errorf("error storing new EK: %v", err)
+		return fmt.Errorf("error storing new AK: %v", err)
 	}
 	return nil
 }
@@ -122,9 +122,20 @@ func (v *DataVerifier) StartAttestations() {
 		}
 		err = attestation.Verify(p.AK, nonce)
 		if err != nil {
-			log.Errorf("%v(%v:%v): Invalide Quote: %v", p.Name, p.Endpoint, p.Port, err)
+			log.Errorf("%v(%v:%v): Invalid Quote: %v", p.Name, p.Endpoint, p.Port, err)
 		} else {
 			log.Infof("%v(%v:%v): Valid Quote", p.Name, p.Endpoint, p.Port)
+		}
+		db := FileDB{filepath: "/pcrs"}
+		expectedPCRs, err := db.GetPCRs()
+		if err != nil {
+			log.Errorf("error getting PCRs from DB:  %v", err)
+		}
+		err = attestation.VerifyPCRs(expectedPCRs)
+		if err != nil {
+			log.Errorf("%v(%v:%v): Illegitimate PCR state: %v", p.Name, p.Endpoint, p.Port, err)
+		} else {
+			log.Infof("%v(%v:%v): Valid PCR state", p.Name, p.Endpoint, p.Port)
 		}
 	}
 }
