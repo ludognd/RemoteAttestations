@@ -1,30 +1,37 @@
 package prover
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/xcaliburne/RemoteAttestations/pkg/httpClient"
 	"github.com/xcaliburne/RemoteAttestations/pkg/tpm"
 	"net/http"
 )
 
-type Prover struct {
+type Prover interface {
+	Register(restIP, restPort string) error
+	Attest(nonce []byte) (tpm.Quote, error)
+}
+
+type DataProver struct {
 	Config *Config
 	TPM    tpm.TPM
 	AK     tpm.AttestationKey
 	EK     tpm.EndorsementKey
 }
 
-func NewProver(config *Config) (*Prover, error) {
-	var p Prover
+var _ Prover = (*DataProver)(nil)
+
+func NewProver(config *Config) (*DataProver, error) {
+	var p DataProver
 	var err error
 	t, err := tpm.Open()
 	if err != nil {
 		return nil, fmt.Errorf("error opening TPM: %v", err)
 	}
 	p.TPM, p.Config = t, config
-	isInit, err := p.IsInit()
+	isInit, err := p.isInit()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +48,7 @@ func NewProver(config *Config) (*Prover, error) {
 	return &p, nil
 }
 
-func (p *Prover) IsInit() (bool, error) {
+func (p *DataProver) isInit() (bool, error) {
 	owned, err := p.TPM.IsOwned()
 	if err != nil {
 		return false, err
@@ -49,7 +56,7 @@ func (p *Prover) IsInit() (bool, error) {
 	return owned, nil
 }
 
-func (p *Prover) init() error {
+func (p *DataProver) init() error {
 	var err error
 	err = p.TPM.TakeOwnership(p.Config.OwnerPassword, p.Config.UserPassword)
 	if err != nil {
@@ -67,7 +74,7 @@ func (p *Prover) init() error {
 	return nil
 }
 
-func (p *Prover) load() error {
+func (p *DataProver) load() error {
 	err := p.TPM.ProveOwnership(p.Config.OwnerPassword)
 	if err != nil {
 		return fmt.Errorf("error proving ownership: %v", err)
@@ -88,7 +95,10 @@ func (p *Prover) load() error {
 	return nil
 }
 
-func (p *Prover) Register(restIP, restPort string) error {
+func (p *DataProver) Register(restIP, restPort string) error {
+	if p.Config == nil || p.AK == nil || p.EK == nil{
+		return fmt.Errorf("missing required fields")
+	}
 	err := p.registerEK(restIP, restPort)
 	if err != nil {
 		return err
@@ -96,7 +106,7 @@ func (p *Prover) Register(restIP, restPort string) error {
 	return p.registerAK()
 }
 
-func (p *Prover) registerEK(restIP, restPort string) error {
+func (p *DataProver) registerEK(restIP, restPort string) error {
 	restIP = "10.42.0.152" //TODO: fix hardcoded
 	queryURL := p.Config.VerifierAddress
 	queryURL.Path = "registerNewEK"
@@ -115,7 +125,7 @@ func (p *Prover) registerEK(restIP, restPort string) error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
+	r, err := httpClient.Client.Post(queryURL.String(), "application/json", jsonBody)
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
@@ -126,7 +136,7 @@ func (p *Prover) registerEK(restIP, restPort string) error {
 	return nil
 }
 
-func (p *Prover) registerAK() error {
+func (p *DataProver) registerAK() error {
 	queryURL := p.Config.VerifierAddress
 	queryURL.Path = "registerNewAK"
 	body := struct {
@@ -137,7 +147,7 @@ func (p *Prover) registerAK() error {
 	if err != nil {
 		return fmt.Errorf("error while marshaling body: %v", err)
 	}
-	r, err := http.Post(queryURL.String(), "application/json", bytes.NewBuffer(jsonBody))
+	r, err := httpClient.Client.Post(queryURL.String(), "application/json", jsonBody)
 	if err != nil {
 		return fmt.Errorf("error post query: %v", err)
 	}
@@ -148,11 +158,10 @@ func (p *Prover) registerAK() error {
 	return nil
 }
 
-func (p *Prover) Attest(nonce []byte) (tpm.Quote, error) {
+func (p *DataProver) Attest(nonce []byte) (tpm.Quote, error) {
 	quote, err := p.TPM.Quote(p.AK, nonce, tpm.All_pcrs[:])
 	if err != nil {
 		return nil, fmt.Errorf("error while quoting: %v", err)
 	}
-	fmt.Printf("quote: %+v\n", quote)
 	return quote, nil
 }

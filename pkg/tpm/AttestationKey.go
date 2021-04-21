@@ -79,6 +79,9 @@ func (ak *AttestationKeyData) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	if aux.PublicKey == nil || len(aux.Blob) == 0 {
+		return fmt.Errorf("missing required fields")
+	}
 	ak.PK, ak.B = aux.PublicKey, aux.Blob
 	return nil
 }

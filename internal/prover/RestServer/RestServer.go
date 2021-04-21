@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"github.com/xcaliburne/RemoteAttestations/pkg/prover"
+	"github.com/xcaliburne/RemoteAttestations/internal/prover"
 	"net"
 	"net/http"
 	"time"
@@ -20,7 +20,7 @@ type Config struct {
 type RestServer struct {
 	config *Config
 	server *http.Server
-	p      *prover.Prover
+	p      prover.Prover
 }
 
 func (rest *RestServer) handleRequests(router *mux.Router) {
@@ -28,7 +28,7 @@ func (rest *RestServer) handleRequests(router *mux.Router) {
 	router.HandleFunc("/attest", rest.attest).Methods("POST")
 }
 
-func NewServer(config *Config, prover *prover.Prover) (*RestServer, error) {
+func NewServer(config *Config, prover prover.Prover) (*RestServer, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(config.Address.String(), config.Port))
 	if err != nil {
 		return nil, err
@@ -82,25 +82,30 @@ func (rest *RestServer) attest(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&queryBody)
 	if err != nil {
 		log.Error("error decoding nonce: ", err)
-		http.Error(w, "error decoding nonce", 500)
+		http.Error(w, "error decoding nonce", http.StatusBadRequest)
+		return
+	}
+	if len(queryBody.Nonce) == 0 {
+		log.Error("empty nonce")
+		http.Error(w, "empty nonce", http.StatusBadRequest)
 		return
 	}
 	attestation, err := rest.p.Attest(queryBody.Nonce[:])
 	if err != nil {
 		log.Error("error computing attestation: ", err)
-		http.Error(w, "error computing attestation", 500)
+		http.Error(w, "error computing attestation", http.StatusInternalServerError)
 		return
 	}
 	respBody, err := json.Marshal(attestation)
 	if err != nil {
 		log.Error("error marshaling response: ", err)
-		http.Error(w, "error marshaling response", 500)
+		http.Error(w, "error marshaling response", http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write(respBody)
 	if err != nil {
 		log.Error("error writing response: ", err)
-		http.Error(w, "error writing response", 500)
+		http.Error(w, "error writing response", http.StatusInternalServerError)
 		return
 	}
 }

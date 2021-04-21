@@ -39,12 +39,20 @@ type Debug struct {
 	} `json:"first_received_response_byte"`
 }
 
-type HTTPClient struct {
+type HttpClient interface {
+	Post(url string, contentType string, body []byte) (*http.Response, error)
+	Get(url string) (*http.Response, error)
+}
+
+type DataHttpClient struct {
 	client *http.Client
 }
 
+var _ HttpClient = (*DataHttpClient)(nil)
+var Client HttpClient
+
 func init() {
-	Client = &HTTPClient{
+	Client = &DataHttpClient{
 		client: &http.Client{
 			Timeout: time.Second * 10,
 			Transport: &http.Transport{
@@ -63,8 +71,6 @@ func init() {
 		},
 	}
 }
-
-var Client *HTTPClient
 
 func trace() (*httptrace.ClientTrace, *Debug) {
 	d := &Debug{}
@@ -118,7 +124,7 @@ func trace() (*httptrace.ClientTrace, *Debug) {
 	return t, d
 }
 
-func (c *HTTPClient) TraceHTTPPost(url string, body []byte) {
+func (c *DataHttpClient) TraceHTTPPost(url string, body []byte) {
 	// Create trace struct.
 	trace, debug := trace()
 
@@ -148,7 +154,7 @@ func (c *HTTPClient) TraceHTTPPost(url string, body []byte) {
 	fmt.Println(string(respBody))
 }
 
-func (c *HTTPClient) TraceHTTPGet(url string) {
+func (c *DataHttpClient) TraceHTTPGet(url string) {
 	// Create trace struct.
 	trace, debug := trace()
 
@@ -178,7 +184,7 @@ func (c *HTTPClient) TraceHTTPGet(url string) {
 	fmt.Println(string(body))
 }
 
-func (c *HTTPClient) Post(url string, contentType string, body []byte) (*http.Response, error) {
+func (c *DataHttpClient) Post(url string, contentType string, body []byte) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("request error: %v", err)
@@ -188,7 +194,7 @@ func (c *HTTPClient) Post(url string, contentType string, body []byte) (*http.Re
 	return c.client.Do(req)
 }
 
-func (c *HTTPClient) Get(url string) (*http.Response, error) {
+func (c *DataHttpClient) Get(url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("request error: %v", err)

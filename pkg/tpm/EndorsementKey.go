@@ -52,6 +52,9 @@ func (ek *EndorsementKeyData) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	if len(aux.RawCertificate) == 0 {
+		return fmt.Errorf("missing required fields")
+	}
 	cert, err := parseEKCertificate(aux.RawCertificate)
 	if err != nil {
 		return err
